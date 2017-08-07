@@ -5,3 +5,7 @@ canvas {
     background-image: url("title.png");
     background-size: 384px;
 }
+
+canvas.show-restaurant {
+    background-image: url("restaurant.png");
+}
