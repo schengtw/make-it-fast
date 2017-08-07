@@ -1,0 +1,7 @@
+canvas {
+    width: 384px;
+    height: 384px;
+    image-rendering: pixelated;
+    background-image: url("title.png");
+    background-size: 384px;
+}
