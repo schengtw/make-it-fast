@@ -2,10 +2,10 @@ canvas {
     width: 384px;
     height: 384px;
     image-rendering: pixelated;
-    background-image: url("title.png");
+    background-image: url("images/title.png");
     background-size: 384px;
 }
 
 canvas.show-restaurant {
-    background-image: url("restaurant.png");
+    background-image: url("images/restaurant.png");
 }
