@@ -42,6 +42,10 @@ $(document).ready(function () {
         canvas.addClass('show-restaurant');
         ctx.clearRect(0, 0, 64, 64);
         drawPlate(ctx);
+        drawBox(ctx);
+        drawBacon(ctx);
+        drawBread(ctx);
+
         // When the player clicks inside the restaurant...
         canvas.click(function (event) {
             // Draw an egg
@@ -58,4 +62,25 @@ function drawPlate(ctx) {
     ctx.drawImage(customerPlate,20,11);
     ctx.drawImage(customerPlate,35,11);
     ctx.drawImage(customerPlate,50,11);
+}
+
+      // add egg box
+function drawBox(ctx) {
+    var eggBox=$('#egg-box').get(0);
+    var canvas=$('#canvas');
+    ctx.drawImage(eggBox,55,50);
+}
+
+      // add bacon
+function drawBacon(ctx) {
+    var bacon=$('#bacon').get(0);
+    var canvas=$('#canvas');
+    ctx.drawImage(bacon,55,37);
+}
+
+      // add bread
+function drawBread(ctx) {
+    var bread=$('#bread').get(0);
+    var canvas=$('#canvas');
+    ctx.drawImage(bread,55,24);
 }
