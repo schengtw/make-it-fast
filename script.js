@@ -28,13 +28,13 @@ function main() {
 }
 
 var dragging = false;
-var egg = null;
+var eggs = [];
 
 function onMouseDown(canvas, event) {
     var translatedEvent = translateXY(canvas, event);
     var x = translatedEvent.x;
     var y = translatedEvent.y;
-    if (x >= 55 && y >= 50 && x <= 63 && y <= 58) {
+    if (eggs.length < 6 && x >= 55 && y >= 50 && x <= 63 && y <= 58) {
         dragging = true;
     }
 }
@@ -56,10 +56,11 @@ function onMouseUp(ctx, canvas, event) {
     if (x >= 7 && y >= 27 && x <= 47 && y <= 52) {
         // x and y are inside the griddle
         console.log('Dropped on griddle');
-        egg = {
+        var newEgg = {
             x: x,
             y: y
         };
+        eggs.push(newEgg);
     } else {
         drawRestaurant(ctx);
     }
@@ -67,7 +68,7 @@ function onMouseUp(ctx, canvas, event) {
 }
 
 //  Find a position on canvas
-function translateXY (canvas,event) {
+function translateXY(canvas,event) {
     var canvasX = (event.clientX - canvas.offset().left)
         / canvas.width() * 64;
     var canvasY = (event.clientY - canvas.offset().top)
@@ -94,7 +95,8 @@ function drawRestaurant(ctx) {
     drawEggBox(ctx);
     drawBacon(ctx);
     drawBread(ctx);
-    if (egg !== null) {
+    for (var i = 0; i < eggs.length; i++) {
+        var egg = eggs[i];
         drawEgg(ctx, egg.x, egg.y);
     }
 }
@@ -104,12 +106,12 @@ function drawEgg(ctx, x, y) {
     x = Math.floor(x) - 4
     y = Math.floor(y) - 2
 
-    var fryingEgg=$('#frying-egg').get(0);
+    var fryingEgg = $('#frying-egg').get(0);
     ctx.drawImage(fryingEgg, x, y);
 }
 
 function drawPlate(ctx) {
-    var customerPlate=$('#customer-plate').get(0);
+    var customerPlate = $('#customer-plate').get(0);
     ctx.drawImage(customerPlate, 5, 11);
     ctx.drawImage(customerPlate, 20, 11);
     ctx.drawImage(customerPlate, 35, 11);
@@ -117,16 +119,16 @@ function drawPlate(ctx) {
 }
 
 function drawEggBox(ctx) {
-    var eggBox=$('#egg-box').get(0);
+    var eggBox = $('#egg-box').get(0);
     ctx.drawImage(eggBox, 55, 50);
 }
 
 function drawBacon(ctx) {
-    var bacon=$('#bacon').get(0);
+    var bacon = $('#bacon').get(0);
     ctx.drawImage(bacon, 55, 37);
 }
 
 function drawBread(ctx) {
-    var bread=$('#bread').get(0);
+    var bread = $('#bread').get(0);
     ctx.drawImage(bread, 55, 24);
 }
