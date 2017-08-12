@@ -28,6 +28,7 @@ function main() {
 }
 
 var dragging = false;
+var egg = null;
 
 function onMouseDown(canvas, event) {
     var translatedEvent = translateXY(canvas, event);
@@ -53,13 +54,19 @@ function onMouseUp(ctx, canvas, event) {
     var x = translatedEvent.x;
     var y = translatedEvent.y;
     if (x >= 7 && y >= 27 && x <= 47 && y <= 52) {
+        // x and y are inside the griddle
         console.log('Dropped on griddle');
+        egg = {
+            x: x,
+            y: y
+        };
     } else {
         drawRestaurant(ctx);
     }
     dragging = false;
 }
 
+//  Find a position on canvas
 function translateXY (canvas,event) {
     var canvasX = (event.clientX - canvas.offset().left)
         / canvas.width() * 64;
@@ -87,14 +94,18 @@ function drawRestaurant(ctx) {
     drawEggBox(ctx);
     drawBacon(ctx);
     drawBread(ctx);
+    if (egg !== null) {
+        drawEgg(ctx, egg.x, egg.y);
+    }
 }
 
 function drawEgg(ctx, x, y) {
+    // Match cursor and images
+    x = Math.floor(x) - 4
+    y = Math.floor(y) - 2
+
     var fryingEgg=$('#frying-egg').get(0);
-    ctx.drawImage(
-        fryingEgg,
-        Math.floor(x) - 4,
-        Math.floor(y) - 2);
+    ctx.drawImage(fryingEgg, x, y);
 }
 
 function drawPlate(ctx) {
