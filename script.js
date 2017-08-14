@@ -16,13 +16,16 @@ function main() {
 
         // When the player clicks inside the restaurant...
         canvas.mousedown(function (event) {
-            onMouseDown(canvas, event);
+            onMouseDown(ctx, canvas, event);
         })
         canvas.mousemove(function (event) {
             onMouseMove(ctx, canvas, event);
         })
         canvas.mouseup(function (event) {
             onMouseUp(ctx, canvas, event);
+        })
+        canvas.mouseleave(function (event){
+            onMouseLeave(ctx);
         })
     });
 }
@@ -49,12 +52,17 @@ function translateToTopLeft(position, boxSize) {
     };
 }
 
-function addCurrentTime(position) {
+function createNewIngredient(position) {
     return {
         x: position.x,
         y: position.y,
-        cookingStartTime: window.performance.now()
+        totalCookingTime: 0
     };
+}
+
+function moveIngredient (ingredient, newPosition) {
+    ingredient.x = newPosition.x
+    ingredient.y = newPosition.y
 }
 
 var eggInfo = {
@@ -89,88 +97,94 @@ var griddle = {
     size: { x: 39, y: 21 }
 }
 
-var dragging = false;
+var draggingEgg = undefined;
+var draggingBacon = undefined;
+var draggingBread = undefined;
 var eggs = [];
 var bacons = [];
 var breads= [];
 
-function onMouseDown(canvas, event) {
+function onMouseDown(ctx, canvas, event) {
     var mouse = translateXY(canvas, event);
-    var x = mouse.x;
-    var y = mouse.y;
     if (eggs.length < 6 && isInsideBox(mouse, eggBox)) {
-        dragging = 'egg';
+        draggingEgg = createNewIngredient(translateToTopLeft(mouse, eggInfo.size));
     } else if (bacons.length < 5 && isInsideBox(mouse, baconPlate)) {
-        dragging = 'bacon';
+        draggingBacon = createNewIngredient(translateToTopLeft(mouse, baconInfo.size));
     } else if (breads.length < 3 && isInsideBox(mouse, breadPlate)) {
-        dragging = 'bread';
+        draggingBread = createNewIngredient(translateToTopLeft(mouse, breadInfo.size));
     } else {
-        var draggingEgg = eggs.find(function (egg) {
+        draggingEgg = eggs.find(function (egg) {
             return isInside(mouse, egg, eggInfo.size);
         });
         if (draggingEgg !== undefined) {
             var i = eggs.indexOf(draggingEgg);
             eggs.splice(i, 1);
-            dragging = 'egg';
+            moveIngredient(draggingEgg, translateToTopLeft(mouse, eggInfo.size));
         } else {
-            var draggingBacon = bacons.find(function (bacon) {
+            draggingBacon = bacons.find(function (bacon) {
                 return isInside(mouse, bacon, baconInfo.size);
             });
             if (draggingBacon !== undefined) {
                 var i = bacons.indexOf(draggingBacon);
                 bacons.splice(i, 1);
-                dragging = 'bacon';
+                moveIngredient(draggingBacon, translateToTopLeft(mouse, baconInfo.size));
             } else {
-                var draggingBread = breads.find(function (bread) {
+                draggingBread = breads.find(function (bread) {
                     return isInside(mouse, bread, breadInfo.size);
                 });
                 if (draggingBread !== undefined) {
                     var i = breads.indexOf(draggingBread);
                     breads.splice(i, 1);
-                    dragging = 'bread';
+                    moveIngredient(draggingBread, translateToTopLeft(mouse, breadInfo.size));
                 }
             }
         }
     }
+    drawRestaurant(ctx);
 }
 
 function onMouseMove(ctx, canvas, event) {
     var mouse = translateXY(canvas, event);
 
-    if (dragging === 'egg') {
-        drawRestaurant(ctx);
-        drawEgg(ctx, addCurrentTime(translateToTopLeft(mouse, eggInfo.size)));
-    } else if (dragging === 'bacon') {
-        drawRestaurant(ctx);
-        drawBacon(ctx, addCurrentTime(translateToTopLeft(mouse, baconInfo.size)));
-    } else if(dragging === 'bread') {
-        drawRestaurant(ctx);
-        drawBread(ctx, addCurrentTime(translateToTopLeft(mouse, breadInfo.size)));
+    if (draggingEgg !== undefined) {
+        moveIngredient(draggingEgg, translateToTopLeft(mouse, eggInfo.size));
+    } else if (draggingBacon !== undefined) {
+        moveIngredient(draggingBacon, translateToTopLeft(mouse, baconInfo.size));
+    } else if(draggingBread !== undefined) {
+        moveIngredient(draggingBread, translateToTopLeft(mouse, breadInfo.size));
     }
+    drawRestaurant(ctx);
 }
 
 function onMouseUp(ctx, canvas, event) {
     var mouse = translateXY(canvas, event);
-    var x = mouse.x;
-    var y = mouse.y;
 
     if (isInsideBox(mouse, griddle)) {
 
         // x and y are inside the griddle
         console.log('Dropped on griddle');
-        if (dragging === 'egg') {
-            var newEgg = addCurrentTime(translateToTopLeft(mouse, eggInfo.size));
-            eggs.push(newEgg);
-        } else if (dragging === 'bacon') {
-            var newBacon = addCurrentTime(translateToTopLeft(mouse, baconInfo.size));
-            bacons.push(newBacon);
-        } else if(dragging === 'bread') {
-            var newBread = addCurrentTime(translateToTopLeft(mouse, breadInfo.size));
-            breads.push(newBread);
+        if (draggingEgg !== undefined) {
+            moveIngredient(draggingEgg, translateToTopLeft(mouse, eggInfo.size));
+            eggs.push(draggingEgg);
+        } else if (draggingBacon !== undefined) {
+            moveIngredient(draggingBacon, translateToTopLeft(mouse, baconInfo.size));
+            bacons.push(draggingBacon);
+        } else if(draggingBread !== undefined) {
+            moveIngredient(draggingBread, translateToTopLeft(mouse, breadInfo.size));
+            breads.push(draggingBread);
         }
     }
+    draggingEgg = undefined;
+    draggingBacon = undefined;
+    draggingBread = undefined;
     drawRestaurant(ctx);
-    dragging = false;
+}
+
+function onMouseLeave(ctx) {
+    draggingEgg = undefined;
+    draggingBacon = undefined;
+    draggingBread = undefined;
+    drawRestaurant(ctx);
 }
 
 //  Find a position on canvas
@@ -195,21 +209,44 @@ function drawTitle(ctx) {
     ctx.fillText('FAST!', 15, 45);
 }
 
+var isAnimationFrameRequested = false;
+var previousTime = window.performance.now()
+
 function drawRestaurant(ctx) {
+    if (isAnimationFrameRequested === false) {
+        window.requestAnimationFrame(function () {
+            isAnimationFrameRequested = false;
+            drawRestaurant(ctx);
+        });
+        isAnimationFrameRequested = true;
+    }
+    var currentTime = window.performance.now()
+    var elapsedTime = currentTime - previousTime
+    previousTime = currentTime
+
     ctx.clearRect(0, 0, 64, 64);
     drawPlate(ctx);
     drawEggBox(ctx);
     drawBaconPlate(ctx);
     drawBreadPlate(ctx);
-    console.log('drawRestaurant')
     for(var i = 0; i < breads.length; i++) {
+        cookIngredient(breads[i], elapsedTime);
         drawBread(ctx, breads[i]);
     }
     for (var i = 0; i < bacons.length; i++) {
+        cookIngredient(bacons[i], elapsedTime);
         drawBacon(ctx, bacons[i]);
     }
     for (var i = 0; i < eggs.length; i++) {
+        cookIngredient(eggs[i], elapsedTime);
         drawEgg(ctx, eggs[i]);
+    }
+    if(draggingEgg !== undefined) {
+        drawEgg(ctx, draggingEgg);
+    } else if (draggingBacon !== undefined) {
+        drawBacon(ctx, draggingBacon);
+    } else if (draggingBread !== undefined) {
+        drawBread(ctx, draggingBread);
     }
 }
 
@@ -228,9 +265,12 @@ function drawBread(ctx, bread) {
     drawIngredient(ctx, oneBread, bread, breadInfo);
 }
 
+function cookIngredient(ingredient, elapsedTime) {
+    ingredient.totalCookingTime += elapsedTime;
+}
+
 function drawIngredient(ctx, image, ingredient, ingredientInfo) {
-    var currentTime = window.performance.now();
-    var cookingTime = currentTime - ingredient.cookingStartTime;
+    var cookingTime = ingredient.totalCookingTime;
     var i;
     var progress;
     if (cookingTime < ingredientInfo.times.perfectTime){
