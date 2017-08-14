@@ -49,9 +49,28 @@ function translateToTopLeft(position, boxSize) {
     };
 }
 
-var eggSize = { x: 9, y: 6 };
-var baconSize = { x: 10, y: 5 };
-var breadSize = { x: 8, y: 9 };
+function addCurrentTime(position) {
+    return {
+        x: position.x,
+        y: position.y,
+        cookingStartTime: window.performance.now()
+    };
+}
+
+var eggInfo = {
+    size: {x: 9, y: 6},
+    times: {perfectTime: 2000, burnedTime:3500}
+};
+
+var baconInfo = {
+    size: {x: 10, y: 5},
+    times: {perfectTime: 4500, burnedTime:6500}
+};
+
+var breadInfo = {
+    size: {x: 8, y: 9},
+    times: {perfectTime: 7000, burnedTime:10000}
+};
 
 var eggBox = {
     position: { x: 55, y: 50 },
@@ -87,7 +106,7 @@ function onMouseDown(canvas, event) {
         dragging = 'bread';
     } else {
         var draggingEgg = eggs.find(function (egg) {
-            return isInside(mouse, egg, eggSize);
+            return isInside(mouse, egg, eggInfo.size);
         });
         if (draggingEgg !== undefined) {
             var i = eggs.indexOf(draggingEgg);
@@ -95,7 +114,7 @@ function onMouseDown(canvas, event) {
             dragging = 'egg';
         } else {
             var draggingBacon = bacons.find(function (bacon) {
-                return isInside(mouse, bacon, baconSize);
+                return isInside(mouse, bacon, baconInfo.size);
             });
             if (draggingBacon !== undefined) {
                 var i = bacons.indexOf(draggingBacon);
@@ -103,7 +122,7 @@ function onMouseDown(canvas, event) {
                 dragging = 'bacon';
             } else {
                 var draggingBread = breads.find(function (bread) {
-                    return isInside(mouse, bread, breadSize);
+                    return isInside(mouse, bread, breadInfo.size);
                 });
                 if (draggingBread !== undefined) {
                     var i = breads.indexOf(draggingBread);
@@ -120,13 +139,13 @@ function onMouseMove(ctx, canvas, event) {
 
     if (dragging === 'egg') {
         drawRestaurant(ctx);
-        drawEgg(ctx, translateToTopLeft(mouse, eggSize));
+        drawEgg(ctx, addCurrentTime(translateToTopLeft(mouse, eggInfo.size)));
     } else if (dragging === 'bacon') {
         drawRestaurant(ctx);
-        drawBacon(ctx, translateToTopLeft(mouse, baconSize));
+        drawBacon(ctx, addCurrentTime(translateToTopLeft(mouse, baconInfo.size)));
     } else if(dragging === 'bread') {
         drawRestaurant(ctx);
-        drawBread(ctx, translateToTopLeft(mouse, breadSize));
+        drawBread(ctx, addCurrentTime(translateToTopLeft(mouse, breadInfo.size)));
     }
 }
 
@@ -140,13 +159,13 @@ function onMouseUp(ctx, canvas, event) {
         // x and y are inside the griddle
         console.log('Dropped on griddle');
         if (dragging === 'egg') {
-            var newEgg = translateToTopLeft(mouse, eggSize);
+            var newEgg = addCurrentTime(translateToTopLeft(mouse, eggInfo.size));
             eggs.push(newEgg);
         } else if (dragging === 'bacon') {
-            var newBacon = translateToTopLeft(mouse, baconSize);
+            var newBacon = addCurrentTime(translateToTopLeft(mouse, baconInfo.size));
             bacons.push(newBacon);
         } else if(dragging === 'bread') {
-            var newBread = translateToTopLeft(mouse, breadSize);
+            var newBread = addCurrentTime(translateToTopLeft(mouse, breadInfo.size));
             breads.push(newBread);
         }
     }
@@ -182,6 +201,7 @@ function drawRestaurant(ctx) {
     drawEggBox(ctx);
     drawBaconPlate(ctx);
     drawBreadPlate(ctx);
+    console.log('drawRestaurant')
     for(var i = 0; i < breads.length; i++) {
         drawBread(ctx, breads[i]);
     }
@@ -193,19 +213,55 @@ function drawRestaurant(ctx) {
     }
 }
 
-function drawEgg(ctx, position) {
+function drawEgg(ctx, egg) {
     var fryingEgg = $('#frying-egg').get(0);
-    ctx.drawImage(fryingEgg, position.x, position.y);
+    drawIngredient(ctx, fryingEgg, egg, eggInfo);
 }
 
-function drawBacon(ctx, position) {
+function drawBacon(ctx, bacon) {
     var smallBacon = $('#small-bacon').get(0);
-    ctx.drawImage(smallBacon, position.x , position.y);
+    drawIngredient(ctx, smallBacon, bacon, baconInfo);
 }
 
-function drawBread(ctx, position) {
+function drawBread(ctx, bread) {
     var oneBread = $('#one-bread').get(0);
-    ctx.drawImage(oneBread, position.x, position.y);
+    drawIngredient(ctx, oneBread, bread, breadInfo);
+}
+
+function drawIngredient(ctx, image, ingredient, ingredientInfo) {
+    var currentTime = window.performance.now();
+    var cookingTime = currentTime - ingredient.cookingStartTime;
+    var i;
+    var progress;
+    if (cookingTime < ingredientInfo.times.perfectTime){
+        i = 0;
+        progress = cookingTime / ingredientInfo.times.perfectTime;
+    } else if (cookingTime < ingredientInfo.times.burnedTime) {
+        i = 1;
+        progress = (cookingTime - ingredientInfo.times.perfectTime)
+            / (ingredientInfo.times.burnedTime - ingredientInfo.times.perfectTime);
+    } else {
+        i = 2;
+    }
+
+    function drawIngredientImage(i) {
+        ctx.drawImage(
+            image,
+            0, i * ingredientInfo.size.y,
+            ingredientInfo.size.x, ingredientInfo.size.y,
+            ingredient.x, ingredient.y,
+            ingredientInfo.size.x, ingredientInfo.size.y);
+    }
+
+    drawIngredientImage(i);
+
+    if (i < 2) {
+        ctx.globalAlpha = progress;
+
+        drawIngredientImage(i + 1);
+
+        ctx.globalAlpha = 1.0;
+    }
 }
 
 function drawPlate(ctx) {
@@ -222,11 +278,11 @@ function drawEggBox(ctx) {
 }
 
 function drawBaconPlate(ctx) {
-    var bacon = $('#bacon').get(0);
+    var bacon = $('#bacon-plate').get(0);
     ctx.drawImage(bacon, 55, 37);
 }
 
 function drawBreadPlate(ctx) {
-    var bread = $('#bread').get(0);
+    var bread = $('#bread-plate').get(0);
     ctx.drawImage(bread, 55, 24);
 }
