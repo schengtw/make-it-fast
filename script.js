@@ -11,6 +11,7 @@ function main() {
     // When the player clicks the first time...
     canvas.one('click', function () {
         // Show an empty restaurant
+        startTime = window.performance.now();
         canvas.addClass('show-restaurant');
         drawRestaurant(ctx);
 
@@ -116,6 +117,7 @@ var plate4 = {
             size: plateSize
 }
 
+var startTime;
 var draggingEgg = undefined;
 var draggingBacon = undefined;
 var draggingBread = undefined;
@@ -258,15 +260,23 @@ function drawRestaurant(ctx) {
         });
         isAnimationFrameRequested = true;
     }
-    var currentTime = window.performance.now()
-    var elapsedTime = currentTime - previousTime
-    previousTime = currentTime
+
+    var currentTime = window.performance.now();
+
+    var elapsedTime = currentTime - previousTime;
+    previousTime = currentTime;
 
     ctx.clearRect(0, 0, 64, 64);
     drawPlate(ctx);
     drawEggBox(ctx);
     drawBaconPlate(ctx);
     drawBreadPlate(ctx);
+
+    if (currentTime - startTime > 60 * 1000) {
+        drawFinalScore(ctx);
+        return;
+    }
+
     for(var i = 0; i < breads.length; i++) {
         cookIngredient(breads[i], elapsedTime);
         drawBread(ctx, breads[i]);
@@ -290,10 +300,7 @@ function drawRestaurant(ctx) {
     scoreIngredients(eggs, eggInfo);
     scoreIngredients(bacons, baconInfo);
     scoreIngredients(breads, breadInfo);
-    ctx.font = 'bold 8px sans-serif';
-    ctx.fillStyle = '#DC143C';
-    var textSize = ctx.measureText(score);
-    ctx.fillText(score, 32 - textSize.width / 2, 7);
+    drawSmallScore(ctx);
 }
 
 function drawEgg(ctx, egg) {
@@ -398,4 +405,20 @@ function scoreIngredients(ingredients, ingredientInfo) {
         var j = ingredients.indexOf(ingredient);
         ingredients.splice(j, 1);
     }
+}
+
+function drawSmallScore(ctx) {
+    ctx.font = 'bold 8px sans-serif';
+    ctx.fillStyle = '#DC143C';
+    var textSize = ctx.measureText(score);
+    ctx.fillText(score, 32 - textSize.width / 2, 7);
+}
+
+function drawFinalScore(ctx) {
+    ctx.fillStyle = '#DC143C';
+    ctx.font = 'normal 7px sans-serif';
+    ctx.fillText('YOUR SCORE', 4, 31);
+    ctx.font = 'bold 20px sans-serif';
+    var textSize = ctx.measureText(score);
+    ctx.fillText(score, 28 - textSize.width / 2, 51);
 }
