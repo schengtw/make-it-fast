@@ -56,7 +56,9 @@ function createNewIngredient(position) {
     return {
         x: position.x,
         y: position.y,
-        totalCookingTime: 0
+        totalCookingTime: 0,
+        isOnPlate: false,
+        totalPlateTime: 0
     };
 }
 
@@ -96,6 +98,23 @@ var griddle = {
     position: { x: 8, y: 29 },
     size: { x: 39, y: 21 }
 }
+var plateSize= { x: 10, y: 8 }
+var plate1 = {
+    position: { x: 5, y: 11 },
+    size: plateSize
+}
+var plate2 = {
+            position: { x: 20, y: 11 },
+            size: plateSize
+}
+var plate3 = {
+            position: { x: 35, y: 11 },
+            size: plateSize
+}
+var plate4 = {
+            position: { x: 50, y: 11 },
+            size: plateSize
+}
 
 var draggingEgg = undefined;
 var draggingBacon = undefined;
@@ -103,6 +122,7 @@ var draggingBread = undefined;
 var eggs = [];
 var bacons = [];
 var breads= [];
+var score = 0;
 
 function onMouseDown(ctx, canvas, event) {
     var mouse = translateXY(canvas, event);
@@ -114,7 +134,8 @@ function onMouseDown(ctx, canvas, event) {
         draggingBread = createNewIngredient(translateToTopLeft(mouse, breadInfo.size));
     } else {
         draggingEgg = eggs.find(function (egg) {
-            return isInside(mouse, egg, eggInfo.size);
+            return isInside(mouse, egg, eggInfo.size)
+                && egg.isOnPlate === false;
         });
         if (draggingEgg !== undefined) {
             var i = eggs.indexOf(draggingEgg);
@@ -122,7 +143,8 @@ function onMouseDown(ctx, canvas, event) {
             moveIngredient(draggingEgg, translateToTopLeft(mouse, eggInfo.size));
         } else {
             draggingBacon = bacons.find(function (bacon) {
-                return isInside(mouse, bacon, baconInfo.size);
+                return isInside(mouse, bacon, baconInfo.size)
+                    && bacon.isOnPlate === false;
             });
             if (draggingBacon !== undefined) {
                 var i = bacons.indexOf(draggingBacon);
@@ -130,7 +152,8 @@ function onMouseDown(ctx, canvas, event) {
                 moveIngredient(draggingBacon, translateToTopLeft(mouse, baconInfo.size));
             } else {
                 draggingBread = breads.find(function (bread) {
-                    return isInside(mouse, bread, breadInfo.size);
+                    return isInside(mouse, bread, breadInfo.size)
+                        && bread.isOnPlate === false;
                 });
                 if (draggingBread !== undefined) {
                     var i = breads.indexOf(draggingBread);
@@ -173,7 +196,22 @@ function onMouseUp(ctx, canvas, event) {
             moveIngredient(draggingBread, translateToTopLeft(mouse, breadInfo.size));
             breads.push(draggingBread);
         }
+    } else if (isInsideBox (mouse, plate1)
+        || isInsideBox (mouse, plate2)
+        || isInsideBox (mouse, plate3)
+        || isInsideBox (mouse, plate4)) {
+        if (draggingEgg !== undefined) {
+            draggingEgg.isOnPlate= true;
+            eggs.push(draggingEgg);
+        } else if (draggingBacon !== undefined) {
+            draggingBacon.isOnPlate= true;
+            bacons.push(draggingBacon);
+        } else if(draggingBread !== undefined) {
+            draggingBread.isOnPlate= true;
+            breads.push(draggingBread);
+        }
     }
+
     draggingEgg = undefined;
     draggingBacon = undefined;
     draggingBread = undefined;
@@ -248,6 +286,14 @@ function drawRestaurant(ctx) {
     } else if (draggingBread !== undefined) {
         drawBread(ctx, draggingBread);
     }
+
+    scoreIngredients(eggs, eggInfo);
+    scoreIngredients(bacons, baconInfo);
+    scoreIngredients(breads, breadInfo);
+    ctx.font = 'bold 8px sans-serif';
+    ctx.fillStyle = '#DC143C';
+    var textSize = ctx.measureText(score);
+    ctx.fillText(score, 32 - textSize.width / 2, 7);
 }
 
 function drawEgg(ctx, egg) {
@@ -266,7 +312,12 @@ function drawBread(ctx, bread) {
 }
 
 function cookIngredient(ingredient, elapsedTime) {
-    ingredient.totalCookingTime += elapsedTime;
+    if(ingredient.isOnPlate === false) {
+        ingredient.totalCookingTime += elapsedTime;
+    } else {
+        ingredient.totalPlateTime += elapsedTime;
+    }
+
 }
 
 function drawIngredient(ctx, image, ingredient, ingredientInfo) {
@@ -325,4 +376,26 @@ function drawBaconPlate(ctx) {
 function drawBreadPlate(ctx) {
     var bread = $('#bread-plate').get(0);
     ctx.drawImage(bread, 55, 24);
+}
+
+function scoreIngredients(ingredients, ingredientInfo) {
+    var scoring = ingredients.filter(function (egg) {
+        return egg.totalPlateTime >= 500;
+    })
+    for (var i = 0; i < scoring.length; i++) {
+        var ingredient = scoring[i];
+        var cookingTime = ingredient.totalCookingTime;
+        var ingredientScore;
+        if (cookingTime < ingredientInfo.times.perfectTime){
+            ingredientScore = -5 + 25 * cookingTime / ingredientInfo.times.perfectTime;
+        } else if (cookingTime < ingredientInfo.times.burnedTime) {
+            ingredientScore = 20 - 30 * (cookingTime - ingredientInfo.times.perfectTime)
+                / (ingredientInfo.times.burnedTime - ingredientInfo.times.perfectTime);
+        } else {
+            ingredientScore = -10;
+        }
+        score += Math.round(ingredientScore);
+        var j = ingredients.indexOf(ingredient);
+        ingredients.splice(j, 1);
+    }
 }
