@@ -1,6 +1,11 @@
 canvas {
     width: 384px;
     height: 384px;
+    -ms-interpolation-mode: nearest-neighbor;
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: -webkit-crisp-edges;
+    image-rendering: -moz-crisp-edges;
+    image-rendering: -o-crisp-edges;
     image-rendering: pixelated;
     background-image: url("images/title.png");
     background-size: 384px;
